@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Polygon, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Polygon, Polyline, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { 
   Navigation, 
@@ -75,6 +75,7 @@ export default function DriverHUD({
   const [manualSpeed, setManualSpeed] = useState('42');
 
   const [currentCarPos, setCurrentCarPos] = useState([15.4485, 75.0020]);
+  const [routeGeometry, setRouteGeometry] = useState([]);
 
   const [hudState, setHudState] = useState({
     status: 'NORMAL',
@@ -104,6 +105,11 @@ export default function DriverHUD({
 
       if (driverAlert.latitude && driverAlert.longitude) {
         setCurrentCarPos([driverAlert.latitude, driverAlert.longitude]);
+      }
+
+      // Update OSRM route geometry from WebSocket payload
+      if (driverAlert.route_geometry && driverAlert.route_geometry.length >= 2) {
+        setRouteGeometry(driverAlert.route_geometry);
       }
 
       if (soundEnabled) {
@@ -139,6 +145,13 @@ export default function DriverHUD({
           alert_message: resp.alert_message,
           is_osrm_calculated: resp.is_osrm_calculated,
         }));
+
+        // Store OSRM route geometry for polyline rendering on mini-map
+        if (resp.route_geometry && resp.route_geometry.length >= 2) {
+          setRouteGeometry(resp.route_geometry);
+        } else {
+          setRouteGeometry([]);
+        }
 
         if (soundEnabled) {
           if (resp.status === 'VIOLATION_INSIDE') {
@@ -504,6 +517,20 @@ export default function DriverHUD({
                     pathOptions={{ color: z.color || '#ef4444', fillOpacity: 0.3, weight: 2 }} 
                   />
                 ))}
+
+                {/* OSRM route polyline: vehicle → nearest zone boundary */}
+                {routeGeometry.length >= 2 && (
+                  <Polyline
+                    positions={routeGeometry}
+                    pathOptions={{
+                      color: hudState.status === 'APPROACHING_WARNING' ? '#ffc043' :
+                             hudState.status === 'VIOLATION_INSIDE' ? '#e11900' : '#ffffff',
+                      weight: 2.5,
+                      opacity: 0.9,
+                      dashArray: hudState.status === 'APPROACHING_WARNING' ? '7 5' : null,
+                    }}
+                  />
+                )}
 
                 <Marker position={currentCarPos} icon={uberCarMarkerIcon} />
               </MapContainer>

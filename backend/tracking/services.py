@@ -90,12 +90,12 @@ def find_nearest_boundary_point(latitude, longitude, polygon_coords):
 
 def query_osrm_road_distance(from_lat, from_lng, to_lat, to_lng):
     """
-    Queries the OSRM Routing Engine for actual road-network driving distance (meters)
-    and estimated duration (seconds).
+    Queries the OSRM Routing Engine for actual road-network driving distance (meters),
+    estimated duration (seconds), and full route polyline geometry coordinates.
     Falls back gracefully to road-adjusted distance if OSRM is unreachable.
     """
     osrm_base = getattr(settings, 'OSRM_BASE_URL', 'https://router.project-osrm.org')
-    url = f"{osrm_base}/route/v1/driving/{from_lng},{from_lat};{to_lng},{to_lat}?overview=false&alternatives=false"
+    url = f"{osrm_base}/route/v1/driving/{from_lng},{from_lat};{to_lng},{to_lat}?overview=full&geometries=geojson"
 
     try:
         resp = requests.get(url, timeout=2.5)
@@ -105,16 +105,19 @@ def query_osrm_road_distance(from_lat, from_lng, to_lat, to_lng):
                 primary_route = data['routes'][0]
                 distance = float(primary_route.get('distance', 0.0)) # in meters
                 duration = float(primary_route.get('duration', 0.0)) # in seconds
-                return distance, duration, True
+                raw_coords = primary_route.get('geometry', {}).get('coordinates', [])
+                # Convert [lng, lat] from GeoJSON to Leaflet [lat, lng] format
+                geometry = [[pt[1], pt[0]] for pt in raw_coords]
+                return distance, duration, geometry, True
     except Exception as e:
         logger.debug(f"OSRM query timed out or unavailable ({e}); applying road-network geodesic estimate.")
 
     # High-precision fallback: Great-circle distance * 1.28 road winding factor
     straight_line = haversine_distance(from_lat, from_lng, to_lat, to_lng)
     road_estimate = round(straight_line * 1.28, 1)
-    # Estimate time assuming 35 km/h urban speed = 9.72 m/s
     time_estimate = round(road_estimate / 9.72, 1) if road_estimate > 0 else 0.0
-    return road_estimate, time_estimate, False
+    fallback_geom = [[from_lat, from_lng], [to_lat, to_lng]]
+    return road_estimate, time_estimate, fallback_geom, False
 
 
 def process_vehicle_location(vehicle_id_or_number, latitude, longitude, speed=0.0, heading=0.0):
@@ -224,15 +227,17 @@ def process_vehicle_location(vehicle_id_or_number, latitude, longitude, speed=0.
         nearest_zone = None
         min_road_distance = float('inf')
         min_eta = None
+        best_geometry = []
         is_osrm = False
 
         for zone in active_zones:
             bound_lat, bound_lng = find_nearest_boundary_point(latitude, longitude, zone.coordinates)
-            road_dist, eta, from_osrm = query_osrm_road_distance(latitude, longitude, bound_lat, bound_lng)
+            road_dist, eta, geom, from_osrm = query_osrm_road_distance(latitude, longitude, bound_lat, bound_lng)
             
             if road_dist < min_road_distance:
                 min_road_distance = road_dist
                 min_eta = eta
+                best_geometry = geom
                 nearest_zone = zone
                 is_osrm = from_osrm
 
@@ -266,6 +271,7 @@ def process_vehicle_location(vehicle_id_or_number, latitude, longitude, speed=0.
                 'eta_seconds': min_eta,
                 'threshold_meters': threshold,
                 'is_osrm_calculated': is_osrm,
+                'route_geometry': best_geometry,
                 'alert_message': alert_msg,
             })
         else:
@@ -277,6 +283,7 @@ def process_vehicle_location(vehicle_id_or_number, latitude, longitude, speed=0.
                 'distance_to_boundary': min_road_distance,
                 'eta_seconds': min_eta,
                 'is_osrm_calculated': is_osrm,
+                'route_geometry': best_geometry,
                 'alert_message': None,
             })
     else:

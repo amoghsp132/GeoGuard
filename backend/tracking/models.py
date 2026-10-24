@@ -19,6 +19,29 @@ class UserProfile(models.Model):
         return f"{self.user.username} ({self.get_role_display()})"
 
 
+class UserLoginAudit(models.Model):
+    """Reused from AngelRide auth audit core"""
+    username = models.CharField(max_length=255)
+    device_id = models.CharField(max_length=255, null=True, blank=True)
+    platform = models.CharField(max_length=50, default='web')
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    login_timestamp = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, default='SUCCESS') # SUCCESS, FAILED
+    failure_reason = models.CharField(max_length=100, null=True, blank=True)
+
+    class Meta:
+        ordering = ['-login_timestamp']
+
+
+class UserLockoutTracker(models.Model):
+    """Reused from AngelRide brute-force protection core"""
+    username = models.CharField(max_length=255, unique=True)
+    failed_attempts = models.IntegerField(default=0)
+    last_failed_attempt = models.DateTimeField(null=True, blank=True)
+    locked_until = models.DateTimeField(null=True, blank=True)
+    lockout_reason = models.CharField(max_length=100, null=True, blank=True)
+
+
 class RestrictedZone(models.Model):
     ZONE_TYPE_CHOICES = [
         ('CANTONMENT', 'Cantonment / Military Zone'),

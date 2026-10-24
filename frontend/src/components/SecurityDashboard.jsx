@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapContainer, TileLayer, Polygon, Marker, Popup, Tooltip, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Polygon, Polyline, Marker, Popup, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { 
   ShieldAlert, 
@@ -263,6 +263,20 @@ export default function SecurityDashboard({
                   </Marker>
                 );
               })}
+
+              {/* OSRM Route Polyline — vehicle → nearest zone boundary (AngelRide LiveMap pattern) */}
+              {latestAlert?.route_geometry && latestAlert.route_geometry.length >= 2 && (
+                <Polyline
+                  positions={latestAlert.route_geometry}
+                  pathOptions={{
+                    color: latestAlert.status === 'VIOLATION_INSIDE' ? '#e11900' :
+                           latestAlert.status === 'APPROACHING_WARNING' ? '#ffc043' : '#ffffff',
+                    weight: 3,
+                    opacity: 0.85,
+                    dashArray: latestAlert.status === 'APPROACHING_WARNING' ? '8 6' : null,
+                  }}
+                />
+              )}
             </MapContainer>
 
             {/* Uber-style Map Legend */}

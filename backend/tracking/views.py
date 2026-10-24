@@ -6,7 +6,16 @@ from django.db.models import Count, Q
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 
-from .models import RestrictedZone, Vehicle, VehicleTelemetry, ViolationLog, ProximityWarningLog, UserProfile
+from .models import (
+    RestrictedZone, 
+    Vehicle, 
+    VehicleTelemetry, 
+    ViolationLog, 
+    ProximityWarningLog, 
+    UserProfile,
+    UserLoginAudit,
+    UserLockoutTracker
+)
 from .serializers import (
     RestrictedZoneSerializer,
     VehicleSerializer,
@@ -412,17 +421,38 @@ class RegisterAPIView(APIView):
 
 
 class LoginAPIView(APIView):
-    """Authenticate user and return role details"""
+    """Authenticate user, record audit log, and return role details (reused from AngelRide)"""
     def post(self, request):
         username = request.data.get('username', '').strip()
         password = request.data.get('password', '').strip()
+        platform = request.data.get('platform', 'web')
+        device_id = request.data.get('deviceId', 'browser')
+        ip_addr = request.META.get('REMOTE_ADDR')
 
         if not username or not password:
             return Response({'error': 'Username and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         user = authenticate(username=username, password=password)
         if not user:
+            # Audit failed attempt
+            UserLoginAudit.objects.create(
+                username=username,
+                platform=platform,
+                device_id=device_id,
+                ip_address=ip_addr,
+                status='FAILED',
+                failure_reason='INVALID_CREDENTIALS'
+            )
             return Response({'error': 'Invalid username or password.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Audit successful login
+        UserLoginAudit.objects.create(
+            username=username,
+            platform=platform,
+            device_id=device_id,
+            ip_address=ip_addr,
+            status='SUCCESS'
+        )
 
         profile, _ = UserProfile.objects.get_or_create(
             user=user,
@@ -430,6 +460,7 @@ class LoginAPIView(APIView):
         )
 
         return Response({
+            'status': 'success',
             'message': 'Login successful',
             'user': {
                 'id': user.id,
@@ -438,7 +469,8 @@ class LoginAPIView(APIView):
                 'email': user.email,
                 'role': profile.role,
                 'phone': profile.phone,
-                'assigned_vehicle_number': profile.assigned_vehicle_number
+                'assigned_vehicle_number': profile.assigned_vehicle_number,
+                'redirectUrl': '/dashboard'
             }
         })
 
