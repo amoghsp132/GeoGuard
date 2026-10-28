@@ -13,21 +13,18 @@ import { registerUser } from '../api';
 const ROLES = [
   {
     id: 'SECURITY',
-    emoji: '🛡️',
     label: 'Security Personnel',
     description: 'Monitor vehicles, manage incidents',
     icon: Shield,
   },
   {
     id: 'DRIVER',
-    emoji: '🚗',
     label: 'Driver',
     description: 'Navigate with real-time zone warnings',
     icon: Car,
   },
   {
     id: 'ADMIN',
-    emoji: '👑',
     label: 'Admin',
     description: 'Full system management access',
     icon: UserCheck,
@@ -124,18 +121,23 @@ export default function SignupPage({ onGoToLogin, onGoToLanding, onAuthSuccess }
               <div className="flex flex-col gap-3">
                 {ROLES.map((r) => {
                   const isSelected = role === r.id;
+                  const Icon = r.icon;
                   return (
                     <button
                       key={r.id}
                       type="button"
                       onClick={() => setRole(r.id)}
-                      className={`bg-neutral-900 border rounded-2xl p-5 flex items-center gap-4 cursor-pointer transition text-left ${
+                      className={`bg-neutral-900 border rounded-2xl p-4 sm:p-5 flex items-center gap-4 cursor-pointer transition text-left ${
                         isSelected
                           ? 'border-white bg-neutral-800'
                           : 'border-neutral-800 hover:border-neutral-600'
                       }`}
                     >
-                      <span className="text-3xl">{r.emoji}</span>
+                      <div className={`p-3 rounded-xl shrink-0 transition ${
+                        isSelected ? 'bg-white text-black' : 'bg-neutral-800 text-neutral-300'
+                      }`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
                       <div>
                         <p className="text-sm font-bold text-white">{r.label}</p>
                         <p className="text-xs text-neutral-400 mt-0.5">{r.description}</p>

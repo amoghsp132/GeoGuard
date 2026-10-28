@@ -10,7 +10,10 @@ import {
   MapPin,
   Car,
   Loader2,
-  ChevronDown
+  ChevronDown,
+  ClipboardList,
+  BarChart3,
+  Map
 } from 'lucide-react';
 import { fetchZones, fetchVehicles, deleteZone } from '../api';
 
@@ -724,10 +727,10 @@ function ZoneAdminTab() {
 
 // ── Main AdminPanel Component ────────────────────────────────────────────────
 const SUBTABS = [
-  { id: 'users', label: '👥 Users' },
-  { id: 'audit', label: '📋 Audit Logs' },
-  { id: 'metrics', label: '📊 Metrics' },
-  { id: 'zones', label: '🗺️ Zone Admin' },
+  { id: 'users', label: 'Users', icon: Users },
+  { id: 'audit', label: 'Audit Logs', icon: ClipboardList },
+  { id: 'metrics', label: 'Metrics', icon: BarChart3 },
+  { id: 'zones', label: 'Zone Admin', icon: Map },
 ];
 
 export default function AdminPanel({ currentUser }) {
@@ -745,19 +748,23 @@ export default function AdminPanel({ currentUser }) {
 
       {/* Sub-tab navigation */}
       <div className="flex gap-1.5 overflow-x-auto scrollbar-none pb-1">
-        {SUBTABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveSubTab(tab.id)}
-            className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition ${
-              activeSubTab === tab.id
-                ? 'bg-white text-black'
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-900 border border-neutral-800'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {SUBTABS.map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveSubTab(tab.id)}
+              className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition ${
+                activeSubTab === tab.id
+                  ? 'bg-white text-black'
+                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900 border border-neutral-800'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Sub-tab content */}

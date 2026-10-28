@@ -8,7 +8,9 @@ import {
   LogOut, 
   LogIn,
   Car,
-  Settings
+  Settings,
+  ShieldCheck,
+  UserCheck
 } from 'lucide-react';
 
 export default function Header({ 
@@ -59,8 +61,23 @@ export default function Header({
                   <p className="text-xs font-bold text-white leading-none">
                     {currentUser.full_name || currentUser.username}
                   </p>
-                  <span className="text-[10px] text-neutral-400 font-mono">
-                    {currentUser.role === 'ADMIN' ? '👑 Admin' : currentUser.role === 'DRIVER' ? '🚗 Driver' : '🛡️ Security'}
+                  <span className="text-[10px] text-neutral-400 font-mono flex items-center justify-end gap-1">
+                    {currentUser.role === 'ADMIN' ? (
+                      <>
+                        <UserCheck className="w-3 h-3 text-white" />
+                        <span>Admin</span>
+                      </>
+                    ) : currentUser.role === 'DRIVER' ? (
+                      <>
+                        <Car className="w-3 h-3 text-amber-400" />
+                        <span>Driver</span>
+                      </>
+                    ) : (
+                      <>
+                        <Shield className="w-3 h-3 text-emerald-400" />
+                        <span>Security</span>
+                      </>
+                    )}
                   </span>
                 </div>
 

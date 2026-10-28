@@ -262,10 +262,23 @@ export default function DriverHUD({
 
             <div>
               <div className="flex items-center space-x-2">
-                <span className="text-xs uppercase font-black tracking-widest opacity-80">
-                  {hudState.status === 'VIOLATION_INSIDE' ? '🚨 CRITICAL RESTRICTED AREA BREACH' :
-                   hudState.status === 'APPROACHING_WARNING' ? '⚠️ RESTRICTED ZONE AHEAD' :
-                   'TURN-BY-TURN ROUTING SECURE'}
+                <span className="text-xs uppercase font-black tracking-widest opacity-80 flex items-center gap-1.5">
+                  {hudState.status === 'VIOLATION_INSIDE' ? (
+                    <>
+                      <ShieldAlert className="w-3.5 h-3.5 inline text-white" />
+                      <span>CRITICAL RESTRICTED AREA BREACH</span>
+                    </>
+                  ) : hudState.status === 'APPROACHING_WARNING' ? (
+                    <>
+                      <AlertTriangle className="w-3.5 h-3.5 inline text-amber-400" />
+                      <span>RESTRICTED ZONE AHEAD</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="w-3.5 h-3.5 inline text-white" />
+                      <span>TURN-BY-TURN ROUTING SECURE</span>
+                    </>
+                  )}
                 </span>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-black/30 font-bold">
                   {selectedVehicleNumber}

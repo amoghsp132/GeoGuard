@@ -238,21 +238,21 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                 onClick={() => handleQuickDemo('admin', 'admin123')}
                 className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 font-semibold border border-slate-700/80 transition"
               >
-                👑 Admin
+                Admin
               </button>
               <button
                 type="button"
                 onClick={() => handleQuickDemo('security', 'security123')}
                 className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-300 font-semibold border border-slate-700/80 transition"
               >
-                🛡️ Security
+                Security
               </button>
               <button
                 type="button"
                 onClick={() => handleQuickDemo('driver', 'driver123')}
                 className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold border border-slate-700/80 transition"
               >
-                🚗 Driver
+                Driver
               </button>
             </div>
           </div>
