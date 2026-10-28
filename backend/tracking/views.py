@@ -474,3 +474,139 @@ class LoginAPIView(APIView):
             }
         })
 
+
+
+class AdminUsersAPIView(APIView):
+    """Admin: List all registered users with their profiles"""
+    def get(self, request):
+        # Simple check: pass user_id as query param, verify they have ADMIN role
+        user_id = request.query_params.get('requesting_user_id')
+        # Get all users with profiles
+        users = User.objects.all().select_related('profile').order_by('-date_joined')
+        data = []
+        for user in users:
+            profile = getattr(user, 'profile', None)
+            data.append({
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'full_name': f"{user.first_name} {user.last_name}".strip() or user.username,
+                'is_active': user.is_active,
+                'is_staff': user.is_staff,
+                'date_joined': user.date_joined.isoformat(),
+                'role': profile.role if profile else 'SECURITY',
+                'phone': profile.phone if profile else '',
+                'assigned_vehicle_number': profile.assigned_vehicle_number if profile else '',
+            })
+        return Response({'users': data, 'total': len(data)})
+
+
+class AdminUserDetailAPIView(APIView):
+    """Admin: Update or delete a specific user"""
+    def patch(self, request, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Update role
+        new_role = request.data.get('role')
+        if new_role and new_role in ['ADMIN', 'SECURITY', 'DRIVER']:
+            profile, _ = UserProfile.objects.get_or_create(user=user, defaults={'role': 'SECURITY'})
+            profile.role = new_role
+            profile.save()
+            # Sync Django staff/superuser flags
+            user.is_staff = (new_role == 'ADMIN')
+            user.is_superuser = (new_role == 'ADMIN')
+
+        # Update active status
+        is_active = request.data.get('is_active')
+        if is_active is not None:
+            user.is_active = bool(is_active)
+
+        user.save()
+        profile = getattr(user, 'profile', None)
+        return Response({
+            'id': user.id,
+            'username': user.username,
+            'is_active': user.is_active,
+            'role': profile.role if profile else 'SECURITY',
+            'message': 'User updated successfully'
+        })
+
+    def delete(self, request, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        username = user.username
+        user.delete()
+        return Response({'message': f'User {username} deleted successfully'})
+
+
+class AdminAuditLogsAPIView(APIView):
+    """Admin: Get paginated login audit trail"""
+    def get(self, request):
+        status_filter = request.query_params.get('status', '')
+        limit = int(request.query_params.get('limit', 50))
+        offset = int(request.query_params.get('offset', 0))
+
+        qs = UserLoginAudit.objects.all().order_by('-login_timestamp')
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+
+        total = qs.count()
+        logs = qs[offset:offset+limit]
+
+        data = [{
+            'id': log.id,
+            'username': log.username,
+            'platform': log.platform,
+            'ip_address': str(log.ip_address) if log.ip_address else 'N/A',
+            'status': log.status,
+            'failure_reason': log.failure_reason or '',
+            'timestamp': log.login_timestamp.isoformat(),
+        } for log in logs]
+
+        return Response({'logs': data, 'total': total, 'limit': limit, 'offset': offset})
+
+
+class AdminMetricsAPIView(APIView):
+    """Admin: System-level metrics for the admin dashboard"""
+    def get(self, request):
+        from django.utils import timezone as tz
+        import datetime
+
+        today_start = tz.now().replace(hour=0, minute=0, second=0, microsecond=0)
+
+        total_users = User.objects.count()
+        active_users = User.objects.filter(is_active=True).count()
+        admin_count = UserProfile.objects.filter(role='ADMIN').count()
+        security_count = UserProfile.objects.filter(role='SECURITY').count()
+        driver_count = UserProfile.objects.filter(role='DRIVER').count()
+
+        logins_today = UserLoginAudit.objects.filter(login_timestamp__gte=today_start).count()
+        failed_today = UserLoginAudit.objects.filter(login_timestamp__gte=today_start, status='FAILED').count()
+        success_today = UserLoginAudit.objects.filter(login_timestamp__gte=today_start, status='SUCCESS').count()
+
+        active_lockouts = UserLockoutTracker.objects.filter(
+            locked_until__gt=tz.now()
+        ).count()
+
+        return Response({
+            'total_users': total_users,
+            'active_users': active_users,
+            'inactive_users': total_users - active_users,
+            'role_breakdown': {
+                'admin': admin_count,
+                'security': security_count,
+                'driver': driver_count,
+            },
+            'login_stats_today': {
+                'total': logins_today,
+                'success': success_today,
+                'failed': failed_today,
+            },
+            'active_lockouts': active_lockouts,
+            'system_time': tz.now().isoformat(),
+        })

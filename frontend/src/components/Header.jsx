@@ -7,7 +7,8 @@ import {
   Wifi, 
   LogOut, 
   LogIn,
-  Car
+  Car,
+  Settings
 } from 'lucide-react';
 
 export default function Header({ 
@@ -28,8 +29,7 @@ export default function Header({
           {/* Uber Wordmark Brand + College Tag */}
           <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-2">
-              <span className="text-xl sm:text-2xl font-black tracking-tighter text-white">Uber</span>
-              <span className="text-lg font-bold text-neutral-300">GeoGuard</span>
+              <span className="text-xl sm:text-2xl font-black tracking-tighter text-white">GeoGuard</span>
             </div>
 
             <div className="hidden sm:flex items-center space-x-1 pl-3 border-l border-neutral-800">
@@ -83,20 +83,25 @@ export default function Header({
           </div>
         </div>
 
-        {/* Uber Minimal Navigation Tabs */}
+        {/* Uber Minimal Navigation Tabs — RBAC controlled */}
         <div className="flex space-x-1.5 mt-3 border-t border-neutral-800/80 pt-2.5 overflow-x-auto scrollbar-none">
-          <button
-            onClick={() => setActiveTab('security')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-full text-xs font-bold transition ${
-              activeTab === 'security'
-                ? 'bg-white text-black shadow-sm'
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
-            }`}
-          >
-            <Shield className="w-3.5 h-3.5" />
-            <span>Security Dispatch</span>
-          </button>
 
+          {/* Security tab: hidden for DRIVER */}
+          {currentUser?.role !== 'DRIVER' && (
+            <button
+              onClick={() => setActiveTab('security')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-full text-xs font-bold transition ${
+                activeTab === 'security'
+                  ? 'bg-white text-black shadow-sm'
+                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
+              }`}
+            >
+              <Shield className="w-3.5 h-3.5" />
+              <span>Security Dispatch</span>
+            </button>
+          )}
+
+          {/* Driver tab: always visible */}
           <button
             onClick={() => setActiveTab('driver')}
             className={`flex items-center space-x-2 px-4 py-2 rounded-full text-xs font-bold transition ${
@@ -106,32 +111,53 @@ export default function Header({
             }`}
           >
             <Navigation className="w-3.5 h-3.5" />
-            <span>Uber Driver & Live GPS</span>
+            <span>Driver &amp; Live GPS</span>
           </button>
 
-          <button
-            onClick={() => setActiveTab('zones')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-full text-xs font-bold transition ${
-              activeTab === 'zones'
-                ? 'bg-white text-black shadow-sm'
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
-            }`}
-          >
-            <MapPin className="w-3.5 h-3.5" />
-            <span>Geofence Studio</span>
-          </button>
+          {/* Zones tab: hidden for DRIVER */}
+          {currentUser?.role !== 'DRIVER' && (
+            <button
+              onClick={() => setActiveTab('zones')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-full text-xs font-bold transition ${
+                activeTab === 'zones'
+                  ? 'bg-white text-black shadow-sm'
+                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
+              }`}
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              <span>Geofence Studio</span>
+            </button>
+          )}
 
-          <button
-            onClick={() => setActiveTab('audit')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-full text-xs font-bold transition ${
-              activeTab === 'audit'
-                ? 'bg-white text-black shadow-sm'
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
-            }`}
-          >
-            <FileText className="w-3.5 h-3.5" />
-            <span>Incidents & Audit</span>
-          </button>
+          {/* Audit tab: hidden for DRIVER */}
+          {currentUser?.role !== 'DRIVER' && (
+            <button
+              onClick={() => setActiveTab('audit')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-full text-xs font-bold transition ${
+                activeTab === 'audit'
+                  ? 'bg-white text-black shadow-sm'
+                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Incidents &amp; Audit</span>
+            </button>
+          )}
+
+          {/* Admin tab: only for ADMIN */}
+          {currentUser?.role === 'ADMIN' && (
+            <button
+              onClick={() => setActiveTab('admin')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-full text-xs font-bold transition ${
+                activeTab === 'admin'
+                  ? 'bg-white text-black shadow-sm'
+                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
+              }`}
+            >
+              <Settings className="w-3.5 h-3.5" />
+              <span>Admin Panel</span>
+            </button>
+          )}
         </div>
 
       </div>

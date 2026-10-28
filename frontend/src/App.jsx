@@ -7,6 +7,7 @@ import SecurityDashboard from './components/SecurityDashboard';
 import DriverHUD from './components/DriverHUD';
 import ZoneStudio from './components/ZoneStudio';
 import AuditTrail from './components/AuditTrail';
+import AdminPanel from './components/AdminPanel';
 import { 
   fetchStats, 
   fetchZones, 
@@ -102,6 +103,16 @@ export default function App() {
       loadAllData();
     }
   }, [currentView, loadAllData]);
+
+  // RBAC: enforce tab access based on role
+  useEffect(() => {
+    if (!currentUser) return;
+    if (currentUser.role === 'DRIVER') {
+      setActiveTab('driver');
+    } else if (currentUser.role === 'SECURITY' && activeTab === 'admin') {
+      setActiveTab('security');
+    }
+  }, [currentUser]);
 
   // Connect WebSockets when on Dashboard
   useEffect(() => {
@@ -266,6 +277,10 @@ export default function App() {
             violations={violations}
             onRefresh={loadAllData}
           />
+        )}
+
+        {activeTab === 'admin' && currentUser?.role === 'ADMIN' && (
+          <AdminPanel currentUser={currentUser} />
         )}
       </main>
 

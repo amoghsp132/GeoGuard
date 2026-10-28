@@ -185,3 +185,47 @@ export function playAlertTone(type = 'warning') {
     console.debug('Audio playback note:', e);
   }
 }
+
+// ── Admin API helpers ────────────────────────────────────────────────────────
+
+export async function fetchAdminUsers() {
+  const res = await fetch(`${API_BASE}/admin/users/`);
+  return res.json();
+}
+
+export async function updateAdminUser(userId, data) {
+  const res = await fetch(`${API_BASE}/admin/users/${userId}/`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  return res.json();
+}
+
+export async function deleteAdminUser(userId) {
+  const res = await fetch(`${API_BASE}/admin/users/${userId}/`, {
+    method: 'DELETE'
+  });
+  return res.ok;
+}
+
+export async function fetchAdminAuditLogs(statusFilter = '', limit = 50, offset = 0) {
+  let url = `${API_BASE}/admin/audit-logs/?limit=${limit}&offset=${offset}`;
+  if (statusFilter) url += `&status=${statusFilter}`;
+  const res = await fetch(url);
+  return res.json();
+}
+
+export async function fetchAdminMetrics() {
+  const res = await fetch(`${API_BASE}/admin/metrics/`);
+  return res.json();
+}
+
+export async function toggleZoneActive(zoneId, isActive) {
+  const res = await fetch(`${API_BASE}/zones/${zoneId}/`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ is_active: isActive })
+  });
+  return res.json();
+}

@@ -1,4 +1,4 @@
-from django.urls import path, include
+﻿from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     RestrictedZoneViewSet,
@@ -9,7 +9,11 @@ from .views import (
     PresetRoutesAPIView,
     SeedDemoDataAPIView,
     RegisterAPIView,
-    LoginAPIView
+    LoginAPIView,
+    AdminUsersAPIView,
+    AdminUserDetailAPIView,
+    AdminAuditLogsAPIView,
+    AdminMetricsAPIView,
 )
 
 router = DefaultRouter()
@@ -25,4 +29,8 @@ urlpatterns = [
     path('seed-demo-data/', SeedDemoDataAPIView.as_view(), name='seed-demo-data'),
     path('auth/register/', RegisterAPIView.as_view(), name='auth-register'),
     path('auth/login/', LoginAPIView.as_view(), name='auth-login'),
+    path('admin/users/', AdminUsersAPIView.as_view(), name='admin-users'),
+    path('admin/users/<int:user_id>/', AdminUserDetailAPIView.as_view(), name='admin-user-detail'),
+    path('admin/audit-logs/', AdminAuditLogsAPIView.as_view(), name='admin-audit-logs'),
+    path('admin/metrics/', AdminMetricsAPIView.as_view(), name='admin-metrics'),
 ]
